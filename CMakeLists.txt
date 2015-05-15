@@ -105,7 +105,7 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(test1_exe src/test1.cpp)
+add_executable(test1_exe src/pioneer_agent_src.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
