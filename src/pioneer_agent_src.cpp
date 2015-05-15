@@ -25,10 +25,10 @@ class AgentClass
 		/*Dinamicko subscribanje jos nije podrzano u ROS-u pa u ovom slucaju uzimam
 		6 (treba dodati za koacnu verziju) subscribera kao fiksni broj jer toliko 
 		pioneera imamo na raspolaganju*/
-		
+		void callback_function(const geometry_msgs::Twist::ConstPtr& data);		
 			
 	public:
-		void callback_function(const geometry_msgs::Twist::ConstPtr& data);
+
 		AgentClass(ros::NodeHandle handle);
 		void run();
 
