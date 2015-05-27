@@ -24,13 +24,13 @@ class AgentClass
 	private:
 		bool addAgent1True_,addAgent2True_;
 		int pioneer1_num, pioneer2_num;
-		RVO::RVOSimulator *simulator;
+		RVO::RVOSimulator* simulator;
 		ros::Publisher pub_;
 		ros::Subscriber sub[6]; //Subscribere strpam u jedan array da smanjim duljinu deklaracije
 		ros::ServiceClient pozicija_; //Dovoljan je jedan service krijent za citanje pozicija iz Gazeba
 		void callback_function_main(const geometry_msgs::Twist::ConstPtr& data);
 		void callback_function_2(const geometry_msgs::Twist::ConstPtr& data);		
-		void setupScenario(RVO::RVOSimulator* sim);	
+		void setupScenario();	
 	public:
 
 		AgentClass(ros::NodeHandle handle);
@@ -43,19 +43,16 @@ AgentClass::AgentClass(ros::NodeHandle handle)
 {
 //Definicija konstruktora klase
 
-	
 	//const std::string cmd_vel = "/cmd_vel";
 	pub_ = handle.advertise<geometry_msgs::Twist>("/pioneer1/cmd_vel",1000,false); //Postavljanje publishera
 	//const std::string cmd_vel_pref = "/cmd_vel_pref";	
-	sub[0] = handle.subscribe("pioneer1/cmd_vel_pref",1000,&AgentClass::callback_function_main,this); //Postavljanje glavnog subscribera
-	sub[1] = handle.subscribe("pioneer2/cmd_vel_pref",1000,&AgentClass::callback_function_2,this); //Preferirana brzina drugog pioneera
+	sub[0] = handle.subscribe("/pioneer1/cmd_vel_pref",1000,&AgentClass::callback_function_main,this); //Postavljanje glavnog subscribera
+	sub[1] = handle.subscribe("/pioneer2/cmd_vel_pref",1000,&AgentClass::callback_function_2,this); //Preferirana brzina drugog pioneera
 	//Pracenje pozicije robota iz Gazeba
 	pozicija_ = handle.serviceClient<gazebo_msgs::GetModelState>("gazebo/get_model_state");
 	//Rezervacija memorije za novu instancu simulatora
-	simulator = new RVO::RVOSimulator;
-
-	setupScenario(simulator);
-
+	simulator = new RVO::RVOSimulator();
+	setupScenario();
 	addAgent1True_ = true;
 	addAgent2True_ = true;
 }
@@ -94,7 +91,9 @@ void AgentClass::run()
 
 		simulator->setAgentPosition(pioneer2_num,RVO::Vector2(X,Y)); //Trenutna pozicija iz Gazeba u RVO simulator
 	}
-
+	
+	if (!addAgent1True_)
+	{
 	simulator->doStep(); //Provođenje koraka simulacije
 	
 	gazebo_msgs::GetModelState pozicija;
@@ -108,7 +107,7 @@ void AgentClass::run()
 	brzina_twist.linear.x = brzina.x()/cos(theta1);
 	brzina_twist.angular.z = (theta1-theta)/simulator->getTimeStep();	
 	pub_.publish(brzina_twist);
-		
+	}
 }
 
 void AgentClass::callback_function_main(const geometry_msgs::Twist::ConstPtr& data)
@@ -146,7 +145,7 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 	if (addAgent2True_)
 		{
 		gazebo_msgs::GetModelState pozicija;
-		pozicija.request.model_name = "pioneer1";
+		pozicija.request.model_name = "pioneer2";
 		pozicija_.call(pozicija);
 
 		float theta = 2*acos(pozicija.response.pose.orientation.w);
@@ -171,11 +170,11 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 
 
 }
-void AgentClass::setupScenario(RVO::RVOSimulator* sim)
+void AgentClass::setupScenario()
 {
-	sim->setTimeStep(0.1f);  //Postavljanje vremena koraka simulacije 	
+	simulator->setTimeStep(0.1f);  //Postavljanje vremena koraka simulacije 	
 	
-	sim->setAgentDefaults(10.0f,5,5.0f,5.0f,0.4f,3.0f); //Osnovni parametri za svakog novog robota dodanog u simulaciju
+	simulator->setAgentDefaults(3.0f,5,5.0f,5.0f,0.4f,1.0f); //Osnovni parametri za svakog novog robota dodanog u simulaciju
 }
 
 
@@ -187,7 +186,7 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "TestNode"); //Pokretanje noda
 	ros::NodeHandle handle; //Handler
 	
-
+{
 	AgentClass pioneer1(handle);
 
 	ros::Rate r(10);
@@ -196,6 +195,7 @@ while( ros::ok() )
 	pioneer1.run();
 	ros::spinOnce();
 	r.sleep();
+}
 }
 return 0;
 }
