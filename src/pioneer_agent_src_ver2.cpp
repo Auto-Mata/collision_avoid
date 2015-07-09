@@ -47,7 +47,7 @@ AgentClass::AgentClass(ros::NodeHandle handle)
 //Definicija konstruktora klase
 
 	//const std::string cmd_vel = "/cmd_vel";
-	pub_ = handle.advertise<geometry_msgs::Twist>("/pioneer2/cmd_vel",1000,false); //Postavljanje publishera
+	pub_ = handle.advertise<geometry_msgs::Twist>("/pioneer1/cmd_vel",1000,false); //Postavljanje publishera
 	//const std::string cmd_vel_pref = "/cmd_vel_pref";	
 	sub[0] = handle.subscribe("/pioneer1/cmd_vel_pref",1000,&AgentClass::callback_function_main,this); //Postavljanje glavnog subscribera
 	sub[1] = handle.subscribe("/pioneer2/cmd_vel_pref",1000,&AgentClass::callback_function_2,this); //Preferirana brzina drugog pioneera
@@ -137,12 +137,12 @@ void AgentClass::run()
 	}
 
 	
-	if (!addAgent2True_)
+	if (!addAgent1True_)
 	{
 		simulator->doStep(); //Provođenje koraka simulacije
 
 		geometry_msgs::Twist brzina_twist;
-		RVO::Vector2 brzina = simulator->getAgentVelocity(pioneer2_num);
+		RVO::Vector2 brzina = simulator->getAgentVelocity(pioneer1_num);
 		float theta_sad = atan2(brzina.y(),brzina.x()); //Kut vektora brzine u ovom koraku simulacije
 		brzina_twist.linear.x = sqrt(pow(brzina.x(),2)+ pow(brzina.y(),2));
 		brzina_twist.angular.z = (theta_sad-theta_prije)/simulator->getTimeStep();	
@@ -163,6 +163,7 @@ void AgentClass::callback_function_main(const geometry_msgs::Twist::ConstPtr& da
 
 		tf::Quaternion q = tf::Quaternion(pozicija.response.pose.orientation.x,pozicija.response.pose.orientation.y,pozicija.response.pose.orientation.z,pozicija.response.pose.orientation.w);
 		float theta = round(100*q.getAngleShortestPath())/100.0; //Kut rotacije najkraćim putem
+		theta_prije = theta; //Orjentacija pri prvom pojavljivanju
 		tf::Vector3 os = q.getAxis();
 		float X,Y;
 		if(os.z() >= 0.0)
@@ -178,8 +179,8 @@ void AgentClass::callback_function_main(const geometry_msgs::Twist::ConstPtr& da
 		simulator->addAgent(RVO::Vector2(X,Y)); //Prvotno dodavanje pioneera u RVO simulator
 		pioneer1_num = simulator->getNumAgents()-1; //Pamćenje rednog broja robota u simulatoru za povrat informacije iz simulatora
 		addAgent1True_ = false; //Zastavica da je robot dodan u simulator 
-		//Postavljanje preferirane brzine 
-		if (os.z() >= 0.0)
+		//Postavljanje preferirane brzine za 1. pioneera
+		/*if (os.z() >= 0.0)
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer1_num, brzina_pref); //Postavljanje prefrerirane brzine 1. pioneera
@@ -188,7 +189,9 @@ void AgentClass::callback_function_main(const geometry_msgs::Twist::ConstPtr& da
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),-1*data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer1_num, brzina_pref); //Postavljanje prefrerirane brzine 1. pioneera
-		}
+		}*/
+			simulator->setAgentPrefVelocity(pioneer1_num,RVO::Vector2(data->linear.x,data->linear.y));
+
 		}
 	else
 		{
@@ -199,7 +202,7 @@ void AgentClass::callback_function_main(const geometry_msgs::Twist::ConstPtr& da
 		tf::Quaternion q = tf::Quaternion(pozicija.response.pose.orientation.x,pozicija.response.pose.orientation.y,pozicija.response.pose.orientation.z,pozicija.response.pose.orientation.w);
 		float theta = round(100*q.getAngleShortestPath())/100.0; //Kut rotacije najkraćim putem
 		tf::Vector3 os = q.getAxis();
-		if (os.z() >= 0.0)
+		/*if (os.z() >= 0.0)
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer1_num, brzina_pref); //Postavljanje prefrerirane brzine 1. pioneera
@@ -208,7 +211,8 @@ void AgentClass::callback_function_main(const geometry_msgs::Twist::ConstPtr& da
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),-1*data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer1_num, brzina_pref); //Postavljanje prefrerirane brzine 1. pioneera
-		}
+		}*/
+			simulator->setAgentPrefVelocity(pioneer1_num,RVO::Vector2(data->linear.x,data->linear.y));
 		}
 		
 }
@@ -222,7 +226,6 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 		
 		tf::Quaternion q = tf::Quaternion(pozicija.response.pose.orientation.x,pozicija.response.pose.orientation.y,pozicija.response.pose.orientation.z,pozicija.response.pose.orientation.w);
 		float theta = round(100*q.getAngleShortestPath())/100.0; //Kut rotacije najkraćim putem
-		theta_prije = theta; //Orjentacija pri prvom pojavljivanju
 		tf::Vector3 os = q.getAxis();
 		float X,Y;
 		if(os.z() >= 0.0)
@@ -239,7 +242,7 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 		pioneer2_num = simulator->getNumAgents()-1; //Pamćenje rednog broja robota u simulatoru za povrat informacije iz simulatora
 		addAgent2True_ = false; //Zastavica da je robot dodan u simulator 
 		//Postavljanje preferirane brzine 2. pioneera
-		if (os.z() >= 0.0)
+		/*if (os.z() >= 0.0)
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer2_num, brzina_pref); //Postavljanje prefrerirane brzine 2. pioneera
@@ -248,7 +251,8 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),-1*data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer2_num, brzina_pref); //Postavljanje prefrerirane brzine 2. pioneera
-		}
+		}*/
+			simulator->setAgentPrefVelocity(pioneer2_num,RVO::Vector2(data->linear.x,data->linear.y));
 
 		}
 	else
@@ -260,7 +264,7 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 		tf::Quaternion q = tf::Quaternion(pozicija.response.pose.orientation.x,pozicija.response.pose.orientation.y,pozicija.response.pose.orientation.z,pozicija.response.pose.orientation.w);
 		float theta = round(100*q.getAngleShortestPath())/100.0; //Kut rotacije najkraćim putem
 		tf::Vector3 os = q.getAxis();
-		if (os.z() >= 0.0)
+		/*if (os.z() >= 0.0)
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer2_num, brzina_pref); //Postavljanje prefrerirane brzine 2. pioneera
@@ -269,7 +273,8 @@ void AgentClass::callback_function_2(const geometry_msgs::Twist::ConstPtr& data)
 		{
 			RVO::Vector2 brzina_pref = RVO::Vector2(-1*data->linear.x*cos(theta),-1*data->linear.x*sin(theta)); //Vektor preferirane brzine
 			simulator->setAgentPrefVelocity(pioneer2_num, brzina_pref); //Postavljanje prefrerirane brzine 2. pioneera
-		}
+		}*/
+			simulator->setAgentPrefVelocity(pioneer2_num,RVO::Vector2(data->linear.x,data->linear.y));
 		}
 	
 
@@ -288,7 +293,7 @@ void AgentClass::setupScenario()
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "TestNode2"); //Pokretanje noda
+	ros::init(argc, argv, "TestNode1"); //Pokretanje noda
 	ros::NodeHandle handle; //Handler
 	
 {

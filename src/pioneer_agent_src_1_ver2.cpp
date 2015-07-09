@@ -279,7 +279,7 @@ void AgentClass::setupScenario()
 {
 	simulator->setTimeStep(0.1f);  //Postavljanje vremena koraka simulacije 	
 	
-	simulator->setAgentDefaults(1.0f,5,0.1f,5.0f,0.4f,1.0f); //Osnovni parametri za svakog novog robota dodanog u simulaciju
+	simulator->setAgentDefaults(1.0f,5,0.5f,5.0f,0.4f,1.0f); //Osnovni parametri za svakog novog robota dodanog u simulaciju
 }
 
 
