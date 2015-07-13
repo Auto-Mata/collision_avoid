@@ -13,6 +13,7 @@ handle - handle za node
 ns - namespace aktivnog robota (npr. pioneer1)
 ***/
 {
+	ROS_INFO("Pocetak konstruktora");
 	pub_ = handle.advertise<geometry_msgs::Twist>("/"+ns+"/cmd_vel",1,false);
 	int i;
 	for (i=0;i<=6;i++)
@@ -30,6 +31,8 @@ ns - namespace aktivnog robota (npr. pioneer1)
 	activeAgent = i;
 	sub_ = handle.subscribe<geometry_msgs::Twist>("/"+ns+"/cmd_vel_pref",1,boost::bind(&AgentClass::callback_function_main,this,_1,i));
 	simulator = new RVO::RVOSimulator();
+	AgentClass::setupScenario();
+	ROS_INFO("Kraj konstruktora");
 }
 
 AgentClass::~AgentClass()
